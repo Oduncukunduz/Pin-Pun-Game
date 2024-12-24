@@ -1,0 +1,194 @@
+using System;
+using System.Drawing;
+using System.Reflection.Emit;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
+
+namespace PinPun_gamae
+{
+    public partial class Form1 : Form
+    {
+        private bool topMovingRight = true; // Topun sağa mı sola mı hareket ettiğini kontrol eder
+        private int Game = 1; // Oyun durumu
+        private int topSpeedX = 5; // Yatay hız
+        private int topSpeedY = 5; // Dikey hız
+        
+        public Form1()
+        {
+            InitializeComponent();
+            this.KeyPreview = true; // Klavye girişlerini formda yakalamak için
+
+            // Timer1'ı ayarla
+            timer1.Interval = 30; // Hızı 30 ms olarak ayarla
+            label5.Top = 150;
+            label8.Top = 150;
+            timer1.Tick += GameLoop; // Timer'ın her tick olayında GameLoop metodunu çalıştır
+            star1.Visible = false;
+            star2.Visible = false;
+            
+        }
+        private void Start_Click(object sender, EventArgs e)
+        {
+           
+            if (Game == 1) // Eğer oyun başladıysa
+            {
+                timer1.Start(); // Timer'ı başlat
+                timer2.Start();        
+                timer3.Start();
+            }
+           Game = 1;
+        }
+        
+        private void GameLoop(object sender, EventArgs e)
+        {
+            if (Game == 1) // Eğer oyun devam ediyorsa
+            {
+                // Öncelikle topu hareket ettir
+                top.Left += topSpeedX;
+                top.Top += topSpeedY;
+
+                // Çarpışma kontrolünü sürekli yap
+                CheckCollisions();
+
+                Speedup();
+            }
+        }
+
+        private void CheckCollisions()
+        {
+            // Ekranın sağ veya sol tarafına çarpıp çarpmadığını kontrol et
+            if (top.Left <= 0 || top.Right >= this.ClientSize.Width)
+            {
+                topSpeedX = -topSpeedX; // Yön değiştir
+            }
+
+            // Ekranın üst veya alt tarafına çarpıp çarpmadığını kontrol et
+            if (top.Top <= 0 || top.Bottom >= this.ClientSize.Height)
+            {
+                topSpeedY = -topSpeedY; // Yön değiştir
+            }
+
+            // Top ile label5'in çarpışmasını kontrol et
+            if (top.Bounds.IntersectsWith(label5.Bounds))
+            {
+                HandleCollisionWithPlayer(label5);
+            }
+            // Top ile label8'in çarpışmasını kontrol et
+            if (top.Bounds.IntersectsWith(label8.Bounds))
+            {
+                HandleCollisionWithPlayer(label8);
+            }
+
+            // Top ile label1 ve label2'ye çarpması (oyun bitirme)
+            if (top.Bounds.IntersectsWith(label1.Bounds) || top.Bounds.IntersectsWith(label2.Bounds))
+            {
+                Game = 0; // Oyun sona erer
+                timer1.Stop(); // Timer'ı durdur
+                MessageBox.Show("Oyun Bitti!"); // Oyun bitti mesajı
+            }
+        }
+        private void Speedup()//yıldızlara teması kontrol etmek , hızlandırmak ve görünmez yapmak için 
+        {
+            
+            if ( star1.Visible && top.Bounds.IntersectsWith(star1.Bounds))
+            {
+                topSpeedX += (topSpeedX > 0) ? 5 : -5;
+                topSpeedY += (topSpeedY > 0) ? 5 : -5;
+                star1.Visible = false;
+                star2.Visible = false;
+
+            }
+            if (star2.Visible && top.Bounds.IntersectsWith(star2.Bounds))
+            {
+                topSpeedX += (topSpeedX > 0) ? 3 : -3;//iki yönde hızlandırma 
+                topSpeedY += (topSpeedY > 0) ? 3 : -3;
+                star2.Visible = false;
+                star1.Visible = false;
+            }
+        }
+        private void HandleCollisionWithPlayer(System.Windows.Forms.Label player)
+        {
+        
+            if (topSpeedX > 0) // Eğer sağa hareket ediyorsa
+            {
+                top.Left = player.Left - top.Width; // Topu player'ın soluna yerleştir
+            }
+            else if (topSpeedX < 0) // Eğer sola hareket ediyorsa
+            {
+                top.Left = player.Right; // Topu player'ın sağına yerleştir
+            }
+
+            topSpeedX = -topSpeedX; // Yön değiştir
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+
+            // S Tuşu: Aşağı hareket
+            if (e.KeyCode == Keys.S && label5.Bottom < this.ClientSize.Height)
+            {
+                label5.Top += 10; // Aşağı hareket ettir
+            }
+
+            // W Tuşu: Yukarı hareket
+            if (e.KeyCode == Keys.W && label5.Top > 0)
+            {
+                label5.Top -= 10; // Yukarı hareket ettir
+            }
+
+            // I Tuşu: label8 yukarı hareket
+            if (e.KeyCode == Keys.I && label8.Top > 0)
+            {
+                label8.Top -= 10; // Yukarı hareket ettir
+            }
+
+            // K Tuşu: label8 aşağı hareket
+            if (e.KeyCode == Keys.K && label8.Bottom < this.ClientSize.Height)
+            {
+                label8.Top += 10; // Aşağı hareket ettir
+            }
+        }
+
+
+        private void rest_Click_1(object sender, EventArgs e) //Oyunu sıfırlamak için 
+        {
+            label5.Top = 150;
+            label8.Top = 150;
+            Game = 0;
+            timer1.Stop();
+            top.Left = (this.ClientSize.Width - top.Width) / 2;
+            top.Top = (this.ClientSize.Height - top.Height) / 2;
+            topSpeedX = 5;
+            topSpeedY = 5;
+            timer2.Stop();
+            timer3.Stop();
+        }
+
+        private void top_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void pictureBox1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void timer2_Tick(object sender, EventArgs e)// yıldızları görünür kılmak için
+        {
+
+            star1.Visible = true;
+            star2.Visible = true;
+            Speedup();
+        }
+
+        private void timer3_Tick(object sender, EventArgs e)// yıldızları görünmez yapmak için 
+        {
+
+            star1.Visible = false;
+            star2.Visible = false;
+        }
+    }
+}
+
